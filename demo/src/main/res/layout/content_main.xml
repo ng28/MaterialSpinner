@@ -37,4 +37,15 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"/>
 
+  <androidx.appcompat.widget.SwitchCompat
+      android:id="@+id/toggle"
+      android:layout_width="100dp"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="24dp"
+      android:text="Toggle"
+      android:textStyle="bold"
+      android:textColor="@android:color/black"
+      android:layout_below="@+id/spinner"
+      android:gravity="center"/>
+
 </RelativeLayout>

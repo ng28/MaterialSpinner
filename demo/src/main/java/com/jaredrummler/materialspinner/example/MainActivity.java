@@ -22,7 +22,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.CompoundButton;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -57,13 +61,13 @@ public class MainActivity extends AppCompatActivity {
 
       @Override public void onClick(View view) {
         try {
-          startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/jaredrummler/MaterialSpinner")));
+          startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ng28/MaterialSpinner")));
         } catch (ActivityNotFoundException ignored) {
         }
       }
     });
 
-    MaterialSpinner spinner = (MaterialSpinner) findViewById(R.id.spinner);
+    final MaterialSpinner spinner = (MaterialSpinner) findViewById(R.id.spinner);
     spinner.setHint("Select Version Names");
     spinner.setItems(ANDROID_VERSIONS);
     spinner.setOnItemSelectedListener(new MaterialSpinner.OnItemSelectedListener<String>() {
@@ -78,9 +82,19 @@ public class MainActivity extends AppCompatActivity {
         Snackbar.make(spinner, "Nothing selected", Snackbar.LENGTH_LONG).show();
       }
     });
-
     //spinner.setRevealPopup(false); //disables popup
-    spinner.setRevealPopup(true);
+
+    SwitchCompat toggle = (SwitchCompat) findViewById(R.id.toggle);
+    toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        if(isChecked) {
+          spinner.setRevealPopup(true);
+        } else {
+          spinner.setRevealPopup(false);
+        }
+      }
+    });
   }
 
 }
