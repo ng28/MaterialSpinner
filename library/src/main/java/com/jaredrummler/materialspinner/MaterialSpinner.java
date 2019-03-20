@@ -31,6 +31,7 @@ import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -65,18 +66,14 @@ public class MaterialSpinner extends TextView {
   private boolean nothingSelected;
   private int popupWindowMaxHeight;
   private int popupWindowHeight;
-  private int selectedIndex;
+  private int selectedIndex = -1;
   private int backgroundColor;
-  private int backgroundSelector;
   private int arrowColor;
   private int arrowColorDisabled;
   private int textColor;
-  private int hintColor;
-  private int popupPaddingTop;
-  private int popupPaddingLeft;
-  private int popupPaddingBottom;
-  private int popupPaddingRight;
-  private String hintText;
+  private int numberOfItems;
+  private Drawable prefix;
+  private boolean revealPopup;
 
   public MaterialSpinner(Context context) {
     super(context);
@@ -97,76 +94,51 @@ public class MaterialSpinner extends TextView {
     TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.MaterialSpinner);
     int defaultColor = getTextColors().getDefaultColor();
     boolean rtl = Utils.isRtl(context);
-
-    int paddingLeft, paddingTop, paddingRight, paddingBottom;
-    int defaultPaddingLeft, defaultPaddingTop, defaultPaddingRight, defaultPaddingBottom;
-    int defaultPopupPaddingLeft, defaultPopupPaddingTop, defaultPopupPaddingRight, defaultPopupPaddingBottom;
-
-    Resources resources = getResources();
-    defaultPaddingLeft = defaultPaddingRight =
-        defaultPaddingBottom = defaultPaddingTop = resources.getDimensionPixelSize(R.dimen.ms__padding_top);
-    if (rtl) {
-      defaultPaddingRight = resources.getDimensionPixelSize(R.dimen.ms__padding_left);
-    } else {
-      defaultPaddingLeft = resources.getDimensionPixelSize(R.dimen.ms__padding_left);
-    }
-    defaultPopupPaddingLeft =
-        defaultPopupPaddingRight = resources.getDimensionPixelSize(R.dimen.ms__popup_padding_left);
-    defaultPopupPaddingTop = defaultPopupPaddingBottom = resources.getDimensionPixelSize(R.dimen.ms__popup_padding_top);
-
+    //
     try {
       backgroundColor = ta.getColor(R.styleable.MaterialSpinner_ms_background_color, Color.WHITE);
-      backgroundSelector = ta.getResourceId(R.styleable.MaterialSpinner_ms_background_selector, 0);
       textColor = ta.getColor(R.styleable.MaterialSpinner_ms_text_color, defaultColor);
-      hintColor = ta.getColor(R.styleable.MaterialSpinner_ms_hint_color, defaultColor);
       arrowColor = ta.getColor(R.styleable.MaterialSpinner_ms_arrow_tint, textColor);
       hideArrow = ta.getBoolean(R.styleable.MaterialSpinner_ms_hide_arrow, false);
-      hintText = ta.getString(R.styleable.MaterialSpinner_ms_hint) == null ? ""
-          : ta.getString(R.styleable.MaterialSpinner_ms_hint);
       popupWindowMaxHeight = ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_dropdown_max_height, 0);
-      popupWindowHeight = ta.getLayoutDimension(R.styleable.MaterialSpinner_ms_dropdown_height,
-          WindowManager.LayoutParams.WRAP_CONTENT);
-      paddingTop = ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_padding_top, defaultPaddingTop);
-      paddingLeft = ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_padding_left, defaultPaddingLeft);
-      paddingBottom = ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_padding_bottom, defaultPaddingBottom);
-      paddingRight = ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_padding_right, defaultPaddingRight);
-      popupPaddingTop =
-          ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_popup_padding_top, defaultPopupPaddingTop);
-      popupPaddingLeft =
-          ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_popup_padding_left, defaultPopupPaddingLeft);
-      popupPaddingBottom =
-          ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_popup_padding_bottom, defaultPopupPaddingBottom);
-      popupPaddingRight =
-          ta.getDimensionPixelSize(R.styleable.MaterialSpinner_ms_popup_padding_right, defaultPopupPaddingRight);
+      popupWindowHeight = ta.getLayoutDimension(R.styleable.MaterialSpinner_ms_dropdown_height, WindowManager.LayoutParams.WRAP_CONTENT);
       arrowColorDisabled = Utils.lighter(arrowColor, 0.8f);
     } finally {
       ta.recycle();
     }
-
-    nothingSelected = true;
-
+    //
+    Resources resources = getResources();
+    int left, right, bottom, top;
+    left = right = bottom = top = resources.getDimensionPixelSize(R.dimen.ms__padding_top);
+    if (rtl) {
+      right = resources.getDimensionPixelSize(R.dimen.ms__padding_left);
+    } else {
+      left = resources.getDimensionPixelSize(R.dimen.ms__padding_left);
+    }
+    //
     setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
     setClickable(true);
-    setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom);
-
+    setMinLines(2);
+    setMaxLines(5);
+    setEllipsize(TextUtils.TruncateAt.END);
+    setPadding(left, top, right, bottom);
+    setTextAlignment(TEXT_ALIGNMENT_TEXT_START);
     setBackgroundResource(R.drawable.ms__selector);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && rtl) {
       setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
       setTextDirection(View.TEXT_DIRECTION_RTL);
     }
-
+    //
     if (!hideArrow) {
       arrowDrawable = Utils.getDrawable(context, R.drawable.ms__arrow).mutate();
       arrowDrawable.setColorFilter(arrowColor, PorterDuff.Mode.SRC_IN);
-      Drawable[] drawables = getCompoundDrawables();
       if (rtl) {
-        drawables[0] = arrowDrawable;
+        setCompoundDrawablesWithIntrinsicBounds(arrowDrawable, null, null, null);
       } else {
-        drawables[2] = arrowDrawable;
+        setCompoundDrawablesWithIntrinsicBounds(null, null, arrowDrawable, null);
       }
-      setCompoundDrawablesWithIntrinsicBounds(drawables[0], drawables[1], drawables[2], drawables[3]);
     }
-
+    //
     listView = new ListView(context);
     listView.setId(getId());
     listView.setDivider(null);
@@ -174,18 +146,17 @@ public class MaterialSpinner extends TextView {
     listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
       @Override public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (position >= selectedIndex
-            && position < adapter.getCount()
-            && adapter.getItems().size() != 1
-            && TextUtils.isEmpty(hintText)) {
-          position++;
-        }
         selectedIndex = position;
         nothingSelected = false;
         Object item = adapter.get(position);
         adapter.notifyItemSelected(position);
-        setTextColor(textColor);
-        setText(item.toString());
+        //
+        if(adapter.get(position) instanceof Spanned) {
+          setText((Spanned) item);
+        } else {
+          setText(item.toString());
+        }
+        //
         collapse();
         if (onItemSelectedListener != null) {
           //noinspection unchecked
@@ -193,28 +164,25 @@ public class MaterialSpinner extends TextView {
         }
       }
     });
-
+    //
     popupWindow = new PopupWindow(context);
     popupWindow.setContentView(listView);
     popupWindow.setOutsideTouchable(true);
     popupWindow.setFocusable(true);
-
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       popupWindow.setElevation(16);
       popupWindow.setBackgroundDrawable(Utils.getDrawable(context, R.drawable.ms__drawable));
     } else {
       popupWindow.setBackgroundDrawable(Utils.getDrawable(context, R.drawable.ms__drop_down_shadow));
     }
-
+    //
     if (backgroundColor != Color.WHITE) { // default color is white
       setBackgroundColor(backgroundColor);
-    } else if (backgroundSelector != 0) {
-      setBackgroundResource(backgroundSelector);
     }
     if (textColor != defaultColor) {
       setTextColor(textColor);
     }
-
+    //
     popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
 
       @Override public void onDismiss() {
@@ -231,26 +199,12 @@ public class MaterialSpinner extends TextView {
   @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     popupWindow.setWidth(MeasureSpec.getSize(widthMeasureSpec));
     popupWindow.setHeight(calculatePopupWindowHeight());
-    if (adapter != null) {
-      CharSequence currentText = getText();
-      String longestItem = currentText.toString();
-      for (int i = 0; i < adapter.getCount(); i++) {
-        String itemText = adapter.getItemText(i);
-        if (itemText.length() > longestItem.length()) {
-          longestItem = itemText;
-        }
-      }
-      setText(longestItem);
-      super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-      setText(currentText);
-    } else {
-      super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
   }
 
   @Override public boolean onTouchEvent(@NonNull MotionEvent event) {
     if (event.getAction() == MotionEvent.ACTION_UP) {
-      if (isEnabled() && isClickable()) {
+      if (isEnabled() && isClickable() && revealPopup) {
         if (!popupWindow.isShowing()) {
           expand();
         } else {
@@ -268,7 +222,7 @@ public class MaterialSpinner extends TextView {
       try {
         Method getStateDrawable = StateListDrawable.class.getDeclaredMethod("getStateDrawable", int.class);
         if (!getStateDrawable.isAccessible()) getStateDrawable.setAccessible(true);
-        int[] colors = { Utils.darker(color, 0.85f), color };
+        int[] colors = {Utils.darker(color, 0.85f), color};
         for (int i = 0; i < colors.length; i++) {
           ColorDrawable drawable = (ColorDrawable) getStateDrawable.invoke(background, i);
           drawable.setColor(colors[i]);
@@ -284,15 +238,6 @@ public class MaterialSpinner extends TextView {
 
   @Override public void setTextColor(int color) {
     textColor = color;
-    if (adapter != null) {
-      adapter.setTextColor(textColor);
-      adapter.notifyDataSetChanged();
-    }
-    super.setTextColor(color);
-  }
-
-  public void setHintColor(int color) {
-    hintColor = color;
     super.setTextColor(color);
   }
 
@@ -300,7 +245,6 @@ public class MaterialSpinner extends TextView {
     Bundle bundle = new Bundle();
     bundle.putParcelable("state", super.onSaveInstanceState());
     bundle.putInt("selected_index", selectedIndex);
-    bundle.putBoolean("nothing_selected", nothingSelected);
     if (popupWindow != null) {
       bundle.putBoolean("is_popup_showing", popupWindow.isShowing());
       collapse();
@@ -314,13 +258,10 @@ public class MaterialSpinner extends TextView {
     if (savedState instanceof Bundle) {
       Bundle bundle = (Bundle) savedState;
       selectedIndex = bundle.getInt("selected_index");
-      nothingSelected = bundle.getBoolean("nothing_selected");
       if (adapter != null) {
-        if (nothingSelected && !TextUtils.isEmpty(hintText)) {
-          setHintColor(hintColor);
-          setText(hintText);
+        if(adapter.get(selectedIndex) instanceof Spanned) {
+          setText((Spanned) adapter.get(selectedIndex));
         } else {
-          setTextColor(textColor);
           setText(adapter.get(selectedIndex).toString());
         }
         adapter.notifyItemSelected(selectedIndex);
@@ -358,24 +299,33 @@ public class MaterialSpinner extends TextView {
   /**
    * Set the default spinner item using its index
    *
-   * @param position the item's position
+   * @param position
+   *     the item's position
    */
   public void setSelectedIndex(int position) {
     if (adapter != null) {
       if (position >= 0 && position <= adapter.getCount()) {
         adapter.notifyItemSelected(position);
         selectedIndex = position;
-        setText(adapter.get(position).toString());
+        if(adapter.get(selectedIndex) instanceof Spanned) {
+          setText((Spanned) adapter.get(selectedIndex));
+        } else {
+          setText(adapter.get(selectedIndex).toString());
+        }
       } else {
-        throw new IllegalArgumentException("Position must be lower than adapter count!");
+        //throw new IllegalArgumentException("Position must be lower than adapter count!");
+        //Show spinner tint text alone
+        setText("");
       }
     }
   }
 
+
   /**
    * Register a callback to be invoked when an item in the dropdown is selected.
    *
-   * @param onItemSelectedListener The callback that will run
+   * @param onItemSelectedListener
+   *     The callback that will run
    */
   public void setOnItemSelectedListener(@Nullable OnItemSelectedListener onItemSelectedListener) {
     this.onItemSelectedListener = onItemSelectedListener;
@@ -384,7 +334,8 @@ public class MaterialSpinner extends TextView {
   /**
    * Register a callback to be invoked when the {@link PopupWindow} is shown but the user didn't select an item.
    *
-   * @param onNothingSelectedListener the callback that will run
+   * @param onNothingSelectedListener
+   *     the callback that will run
    */
   public void setOnNothingSelectedListener(@Nullable OnNothingSelectedListener onNothingSelectedListener) {
     this.onNothingSelectedListener = onNothingSelectedListener;
@@ -393,81 +344,34 @@ public class MaterialSpinner extends TextView {
   /**
    * Set the dropdown items
    *
-   * @param items A list of items
-   * @param <T> The item type
+   * @param items
+   *     A list of items
+   * @param <T>
+   *     The item type
+   */
+  public <T> void setItems(@NonNull List<T> items) {
+    numberOfItems = items.size();
+    adapter = new MaterialSpinnerAdapter<>(getContext(), items).setTextColor(textColor);
+    setAdapterInternal(adapter);
+  }
+
+  /**
+   * Set the dropdown items
+   *
+   * @param items
+   *     A list of items
+   * @param <T>
+   *     The item type
    */
   public <T> void setItems(@NonNull T... items) {
     setItems(Arrays.asList(items));
   }
 
   /**
-   * Set the dropdown items
-   *
-   * @param items A list of items
-   * @param <T> The item type
-   */
-  public <T> void setItems(@NonNull List<T> items) {
-    adapter = new MaterialSpinnerAdapter<>(getContext(), items)
-        .setPopupPadding(popupPaddingLeft, popupPaddingTop, popupPaddingRight, popupPaddingBottom)
-        .setBackgroundSelector(backgroundSelector)
-        .setTextColor(textColor);
-    setAdapterInternal(adapter);
-  }
-
-  /**
-   * Set a custom adapter for the dropdown items
-   *
-   * @param adapter The list adapter
-   */
-  public void setAdapter(@NonNull ListAdapter adapter) {
-    this.adapter = new MaterialSpinnerAdapterWrapper(getContext(), adapter)
-        .setPopupPadding(popupPaddingLeft, popupPaddingTop, popupPaddingRight, popupPaddingBottom)
-        .setBackgroundSelector(backgroundSelector)
-        .setTextColor(textColor);
-    setAdapterInternal(this.adapter);
-  }
-
-  /**
-   * Set the custom adapter for the dropdown items
-   *
-   * @param adapter The adapter
-   * @param <T> The type
-   */
-  public <T> void setAdapter(MaterialSpinnerAdapter<T> adapter) {
-    this.adapter = adapter;
-    this.adapter.setTextColor(textColor);
-    this.adapter.setBackgroundSelector(backgroundSelector);
-    this.adapter.setPopupPadding(popupPaddingLeft, popupPaddingTop, popupPaddingRight, popupPaddingBottom);
-    setAdapterInternal(adapter);
-  }
-
-  private void setAdapterInternal(@NonNull MaterialSpinnerBaseAdapter adapter) {
-    boolean shouldResetPopupHeight = listView.getAdapter() != null;
-    adapter.setHintEnabled(!TextUtils.isEmpty(hintText));
-    listView.setAdapter(adapter);
-    if (selectedIndex >= adapter.getCount()) {
-      selectedIndex = 0;
-    }
-    if (adapter.getItems().size() > 0) {
-      if (nothingSelected && !TextUtils.isEmpty(hintText)) {
-        setText(hintText);
-        setHintColor(hintColor);
-      } else {
-        setTextColor(textColor);
-        setText(adapter.get(selectedIndex).toString());
-      }
-    } else {
-      setText("");
-    }
-    if (shouldResetPopupHeight) {
-      popupWindow.setHeight(calculatePopupWindowHeight());
-    }
-  }
-
-  /**
    * Get the list of items in the adapter
    *
-   * @param <T> The item type
+   * @param <T>
+   *     The item type
    * @return A list of items or {@code null} if no items are set.
    */
   public <T> List<T> getItems() {
@@ -479,15 +383,68 @@ public class MaterialSpinner extends TextView {
   }
 
   /**
+   * Set a custom adapter for the dropdown items
+   *
+   * @param adapter
+   *     The list adapter
+   */
+  public void setAdapter(@NonNull ListAdapter adapter) {
+    this.adapter = new MaterialSpinnerAdapterWrapper(getContext(), adapter);
+    setAdapterInternal(this.adapter);
+  }
+
+  public <T> void setAdapter(MaterialSpinnerAdapter<T> adapter) {
+    this.adapter = adapter;
+    setAdapterInternal(adapter);
+  }
+
+  private void setAdapterInternal(@NonNull MaterialSpinnerBaseAdapter adapter) {
+    listView.setAdapter(adapter);
+    if (selectedIndex >= numberOfItems) {
+      selectedIndex = 0;
+    }
+    if(selectedIndex != -1) {
+      if(adapter.get(selectedIndex) instanceof Spanned) {
+        setText((Spanned) adapter.get(selectedIndex));
+      } else {
+        setText(adapter.get(selectedIndex).toString());
+      }
+    }
+  }
+
+  public <T> void setCustomAdapter(@NonNull MaterialSpinnerBaseAdapter<T> adapter) {
+    this.numberOfItems = adapter.getItems().size();
+    this.adapter = adapter;
+    listView.setAdapter(adapter);
+    if (selectedIndex >= numberOfItems) {
+      selectedIndex = 0;
+    }
+  }
+
+  private void setCustomAdapterInternal(@NonNull MaterialSpinnerBaseAdapter adapter) {
+    listView.setAdapter(adapter);
+    if (selectedIndex >= numberOfItems) {
+      selectedIndex = 0;
+    }
+  }
+
+  /**
    * Show the dropdown menu
    */
   public void expand() {
-    if (canShowPopup()) {
-      if (!hideArrow) {
-        animateArrow(true);
-      }
-      nothingSelected = true;
+    if (!hideArrow) {
+      animateArrow(true);
+    }
+    nothingSelected = true;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      popupWindow.setOverlapAnchor(false);
       popupWindow.showAsDropDown(this);
+    } else {
+      int[] location = new int[2];
+      getLocationOnScreen(location);
+      int x = location[0];
+      int y = getHeight() + location[1];
+      popupWindow.showAtLocation(this, Gravity.TOP | Gravity.START, x, y);
     }
   }
 
@@ -504,7 +461,8 @@ public class MaterialSpinner extends TextView {
   /**
    * Set the tint color for the dropdown arrow
    *
-   * @param color the color value
+   * @param color
+   *     the color value
    */
   public void setArrowColor(@ColorInt int color) {
     arrowColor = color;
@@ -512,31 +470,6 @@ public class MaterialSpinner extends TextView {
     if (arrowDrawable != null) {
       arrowDrawable.setColorFilter(arrowColor, PorterDuff.Mode.SRC_IN);
     }
-  }
-
-  private boolean canShowPopup() {
-    Activity activity = getActivity();
-    if (activity == null || activity.isFinishing()) {
-      return false;
-    }
-    boolean isLaidOut;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      isLaidOut = isLaidOut();
-    } else {
-      isLaidOut = getWidth() > 0 && getHeight() > 0;
-    }
-    return isLaidOut;
-  }
-
-  private Activity getActivity() {
-    Context context = getContext();
-    while (context instanceof ContextWrapper) {
-      if (context instanceof Activity) {
-        return (Activity) context;
-      }
-      context = ((ContextWrapper) context).getBaseContext();
-    }
-    return null;
   }
 
   private void animateArrow(boolean shouldRotateUp) {
@@ -549,7 +482,8 @@ public class MaterialSpinner extends TextView {
   /**
    * Set the maximum height of the dropdown menu.
    *
-   * @param height the height in pixels
+   * @param height
+   *     the height in pixels
    */
   public void setDropdownMaxHeight(int height) {
     popupWindowMaxHeight = height;
@@ -559,7 +493,8 @@ public class MaterialSpinner extends TextView {
   /**
    * Set the height of the dropdown menu
    *
-   * @param height the height in pixels
+   * @param height
+   *     the height in pixels
    */
   public void setDropdownHeight(int height) {
     popupWindowHeight = height;
@@ -570,16 +505,13 @@ public class MaterialSpinner extends TextView {
     if (adapter == null) {
       return WindowManager.LayoutParams.WRAP_CONTENT;
     }
-    float itemHeight = getResources().getDimension(R.dimen.ms__item_height);
-    float listViewHeight = adapter.getCount() * itemHeight;
+    float listViewHeight = adapter.getCount() * getResources().getDimension(R.dimen.ms__item_height);
     if (popupWindowMaxHeight > 0 && listViewHeight > popupWindowMaxHeight) {
       return popupWindowMaxHeight;
     } else if (popupWindowHeight != WindowManager.LayoutParams.MATCH_PARENT
-        && popupWindowHeight != WindowManager.LayoutParams.WRAP_CONTENT
-        && popupWindowHeight <= listViewHeight) {
+            && popupWindowHeight != WindowManager.LayoutParams.WRAP_CONTENT
+            && popupWindowHeight <= listViewHeight) {
       return popupWindowHeight;
-    } else if (listViewHeight == 0 && adapter.getItems().size() == 1) {
-      return (int) itemHeight;
     }
     return WindowManager.LayoutParams.WRAP_CONTENT;
   }
@@ -594,18 +526,10 @@ public class MaterialSpinner extends TextView {
   }
 
   /**
-   * Get the {@link ListView} that is used in the dropdown menu
-   *
-   * @return the ListView shown in the PopupWindow.
-   */
-  public ListView getListView() {
-    return listView;
-  }
-
-  /**
    * Interface definition for a callback to be invoked when an item in this view has been selected.
    *
-   * @param <T> Adapter item type
+   * @param <T>
+   *     Adapter item type
    */
   public interface OnItemSelectedListener<T> {
 
@@ -614,12 +538,17 @@ public class MaterialSpinner extends TextView {
      * the newly selected position is different from the previously selected position or if there was no selected
      * item.</p>
      *
-     * @param view The {@link MaterialSpinner} view
-     * @param position The position of the view in the adapter
-     * @param id The row id of the item that is selected
-     * @param item The selected item
+     * @param view
+     *     The {@link MaterialSpinner} view
+     * @param position
+     *     The position of the view in the adapter
+     * @param id
+     *     The row id of the item that is selected
+     * @param item
+     *     The selected item
      */
     void onItemSelected(MaterialSpinner view, int position, long id, T item);
+
   }
 
   /**
@@ -630,8 +559,14 @@ public class MaterialSpinner extends TextView {
     /**
      * Callback method to be invoked when the {@link PopupWindow} is dismissed and no item was selected.
      *
-     * @param spinner the {@link MaterialSpinner}
+     * @param spinner
+     *     the {@link MaterialSpinner}
      */
     void onNothingSelected(MaterialSpinner spinner);
   }
+
+  public void setRevealPopup(boolean reveal) {
+    this.revealPopup = reveal;
+  }
+
 }

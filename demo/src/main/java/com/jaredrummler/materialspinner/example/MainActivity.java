@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     });
 
     MaterialSpinner spinner = (MaterialSpinner) findViewById(R.id.spinner);
+    spinner.setHint("Select Version Names");
     spinner.setItems(ANDROID_VERSIONS);
     spinner.setOnItemSelectedListener(new MaterialSpinner.OnItemSelectedListener<String>() {
 
@@ -77,6 +78,9 @@ public class MainActivity extends AppCompatActivity {
         Snackbar.make(spinner, "Nothing selected", Snackbar.LENGTH_LONG).show();
       }
     });
+
+    //spinner.setRevealPopup(false); //disables popup
+    spinner.setRevealPopup(true);
   }
 
 }
