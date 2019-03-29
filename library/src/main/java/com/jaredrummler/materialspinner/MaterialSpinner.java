@@ -312,6 +312,7 @@ public class MaterialSpinner extends TextView {
         } else {
           setText(adapter.get(selectedIndex).toString());
         }
+        adapter.notifyItemSelected(selectedIndex);
       } else {
         //throw new IllegalArgumentException("Position must be lower than adapter count!");
         //Show spinner tint text alone
