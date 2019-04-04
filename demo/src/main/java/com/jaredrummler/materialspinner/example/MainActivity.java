@@ -53,10 +53,10 @@ public class MainActivity extends AppCompatActivity {
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+    FloatingActionButton fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener() {
 
       @Override public void onClick(View view) {
@@ -67,11 +67,10 @@ public class MainActivity extends AppCompatActivity {
       }
     });
 
-    final MaterialSpinner spinner = (MaterialSpinner) findViewById(R.id.spinner);
+    final MaterialSpinner spinner = findViewById(R.id.spinner);
     spinner.setHint("Select Version Names");
     spinner.setItems(ANDROID_VERSIONS);
     spinner.setOnItemSelectedListener(new MaterialSpinner.OnItemSelectedListener<String>() {
-
       @Override public void onItemSelected(MaterialSpinner view, int position, long id, String item) {
         Snackbar.make(view, "Clicked " + item, Snackbar.LENGTH_LONG).show();
       }
@@ -82,9 +81,14 @@ public class MainActivity extends AppCompatActivity {
         Snackbar.make(spinner, "Nothing selected", Snackbar.LENGTH_LONG).show();
       }
     });
-    //spinner.setRevealPopup(false); //disables popup
 
-    SwitchCompat toggle = (SwitchCompat) findViewById(R.id.toggle);
+    //Disable popup list if not required
+    //spinner.setRevealPopup(false);
+
+    //Perform default action if required on view reloads
+    spinner.setSelectedIndex(0);
+
+    SwitchCompat toggle = findViewById(R.id.toggle);
     toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
