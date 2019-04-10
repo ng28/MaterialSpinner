@@ -41,6 +41,7 @@ public abstract class MaterialSpinnerBaseAdapter<T> extends BaseAdapter {
   private int popupPaddingBottom;
   private int popupPaddingRight;
   private boolean isHintEnabled;
+  private int typefaceStyle;
 
   public MaterialSpinnerBaseAdapter(Context context) {
     this.context = context;
@@ -53,6 +54,7 @@ public abstract class MaterialSpinnerBaseAdapter<T> extends BaseAdapter {
       convertView = inflater.inflate(R.layout.ms__list_item, parent, false);
       textView = (TextView) convertView.findViewById(R.id.tv_tinted_spinner);
       textView.setTextColor(textColor);
+      textView.setTypeface(textView.getTypeface(), typefaceStyle);
 
       textView.setPadding(popupPaddingLeft, popupPaddingTop, popupPaddingRight, popupPaddingBottom);
 //
@@ -103,7 +105,6 @@ public abstract class MaterialSpinnerBaseAdapter<T> extends BaseAdapter {
       textView = ((ViewHolder) convertView.getTag()).textView;
     }
     textView.setText(getItemText(position));
-    textView.setTypeface(textView.getTypeface(), Typeface.BOLD);
     return convertView;
   }
 
@@ -143,6 +144,11 @@ public abstract class MaterialSpinnerBaseAdapter<T> extends BaseAdapter {
     this.textColor = textColor;
     return this;
   }
+
+    public MaterialSpinnerBaseAdapter<T> setTypeface(@ColorInt int typefaceStyle) {
+        this.typefaceStyle = typefaceStyle;
+        return this;
+    }
 
   public MaterialSpinnerBaseAdapter<T> setBackgroundSelector(@DrawableRes int backgroundSelector) {
     this.backgroundSelector = backgroundSelector;

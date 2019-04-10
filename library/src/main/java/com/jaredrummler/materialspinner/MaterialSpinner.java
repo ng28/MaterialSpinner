@@ -368,7 +368,9 @@ public class MaterialSpinner extends TextView {
    */
   public <T> void setItems(@NonNull List<T> items) {
     numberOfItems = items.size();
-    adapter = new MaterialSpinnerAdapter<>(getContext(), items).setTextColor(textColor);
+    adapter = new MaterialSpinnerAdapter<>(getContext(), items)
+            .setTextColor(textColor)
+            .setTypeface(typefaceStyle);
     setAdapterInternal(adapter);
   }
 
