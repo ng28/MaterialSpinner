@@ -19,6 +19,7 @@ package com.jaredrummler.materialspinner.example;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -87,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
 
     //Perform default action if required on view reloads
     spinner.setSelectedIndex(0);
+    spinner.setTypeface(spinner.getTypeface(), Typeface.BOLD_ITALIC);
 
     SwitchCompat toggle = findViewById(R.id.toggle);
     toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {

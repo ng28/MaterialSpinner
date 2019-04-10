@@ -19,6 +19,7 @@ package com.jaredrummler.materialspinner;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -102,6 +103,7 @@ public abstract class MaterialSpinnerBaseAdapter<T> extends BaseAdapter {
       textView = ((ViewHolder) convertView.getTag()).textView;
     }
     textView.setText(getItemText(position));
+    textView.setTypeface(textView.getTypeface(), Typeface.BOLD);
     return convertView;
   }
 

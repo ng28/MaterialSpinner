@@ -25,6 +25,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
@@ -72,6 +73,7 @@ public class MaterialSpinner extends TextView {
   private int arrowColorDisabled;
   private int textColor;
   private int numberOfItems;
+  public  int typefaceStyle = Typeface.BOLD;
   private Drawable prefix;
   private boolean revealPopup;
 
@@ -194,6 +196,8 @@ public class MaterialSpinner extends TextView {
         }
       }
     });
+    //
+    setTypeface(getTypeface(), typefaceStyle);
   }
 
   @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -236,9 +240,16 @@ public class MaterialSpinner extends TextView {
     popupWindow.getBackground().setColorFilter(color, PorterDuff.Mode.SRC_IN);
   }
 
-  @Override public void setTextColor(int color) {
+  @Override
+  public void setTextColor(int color) {
     textColor = color;
     super.setTextColor(color);
+  }
+
+  @Override
+  public void setTypeface(@Nullable Typeface tf, int style) {
+    typefaceStyle = style;
+    super.setTypeface(tf, style);
   }
 
   @Override public Parcelable onSaveInstanceState() {
